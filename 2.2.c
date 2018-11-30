@@ -7,17 +7,18 @@
 
 int main()
 {
-	char example[] = "You should do more\n";
+	static const char example[] = "You should do more\n";
 	int wr_flag, fd;
-	fd = open("write.txt", O_WRONLY | O_TRUNC | O_CREAT, 0700);
+	fd = open("write.txt", O_WRONLY | O_TRUNC | O_CREAT, 0600);
 	if (fd == -1) {
 		perror("Failed to open");
 		return (1);
 	}
-	wr_flag = write(fd, example, strlen(example));
+	wr_flag = write(fd, example, strlen(example)); //can be mistakes, if write() read not all, should be with while
 	if (wr_flag == -1) {
 		perror("Failed to write");
-		return(2);
+		close(fd);
+		return 2;
 	}
 	close(fd);
 	return 0;
