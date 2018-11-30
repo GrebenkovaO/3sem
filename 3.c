@@ -9,65 +9,70 @@
 int main()
 {
 	char buffer[1000];
+	int result=0;
 	struct stat structure;
 	int fd_read;
-	fd_read = open("write.txt", O_RDONLY, 0700);
+	fd_read = open("write.txt", O_RDONLY);
 	if (fd_read == -1) {
 		perror("Failed to open\n");
-		return (1);
+		result=1;
 	}
-	if (fstat(fd_read, &structure) == -1) {
+	else if (fstat(fd_read, &structure) == -1) {
 		perror("stat error");
-		return(2);
+	        result=2;
 	}
 	printf("Size of file: %ld bytes \n",structure.st_size);
 	if (S_ISSOCK(structure.st_mode)) {
 		printf("Incorrect type of file: Socket\n");
-		return(3);
-	}		
-	if (S_ISLNK(structure.st_mode)) {
+		result=3;
+	}
+        else if (S_ISLNK(structure.st_mode)) {
 		printf("Incorrect type of file: Symbolic link\n");
-		return(4);
+		result=4;
 	}
-	if (S_ISBLK(structure.st_mode)) {
+	else if (S_ISBLK(structure.st_mode)) {
 		printf("Incorrect type of file: Block device\n");
-		return(5);
+		result=5;
 	}
-	if (S_ISDIR(structure.st_mode)) {
+	else if (S_ISDIR(structure.st_mode)) {
 		printf("Incorrect type of file: Directory\n");
-		return(6);
+		result=6;
 	}
-	if (S_ISCHR(structure.st_mode)) {
+	else if (S_ISCHR(structure.st_mode)) {
 		printf("Incorrect type of file: Character device\n");
-		return(7);
+		result=7;
 	}
-	if (S_ISFIFO(structure.st_mode)) {
+	else if (S_ISFIFO(structure.st_mode)) {
 		printf("Incorrect type of file: FIFO\n");
-		return(8);
+		result=8;
 	}
-	if (S_ISREG(structure.st_mode)) {
+	else if (S_ISREG(structure.st_mode)) {
 		printf("Copying is possible\n");
-		int fd_wr = open("Write(1).txt", O_WRONLY | O_CREAT | O_TRUNC, 0700);
+		int fd_wr = open("Write(1).txt", O_WRONLY | O_CREAT | O_TRUNC, 0600);
 		if (fd_wr == -1) {
 			perror("Failed to open copied file\n");
-			return(9);
+			result=9;
+			return(result);
 		}
-		int x = 0;
-		ssize_t c=0;//already copied
-		while (x != 1) {
-			ssize_t read_size = read(fd_read, &buffer, sizeof(buffer));
+		int x = 0; //flag
+			while (x != 1) {
+			ssize_t c = 0;//already copied	
+			ssize_t read_size = read(fd_read, buffer, sizeof(buffer));
 			if (read_size == -1) {
 				perror("Failed to read\n");
-					return(10);
+					result=10;
+				break;
 			}
 			if (read_size == 0) {
 				x = 1;
+				break;
 			}
 			while (c < read_size) {
-				ssize_t write_size = write(fd_wr, &buffer + c, read_size - c);
+				ssize_t write_size = write(fd_wr, buffer + c, read_size - c);
 				if (write_size == -1) {
 					perror("Failed to write\n");
-					return(11);
+					result=11;
+					break;
 				}
 				c += write_size;
 			}
@@ -75,6 +80,6 @@ int main()
 		close(fd_wr);
 		close(fd_read);
 	}
-	return 0;
+	return (result);
 }
 
