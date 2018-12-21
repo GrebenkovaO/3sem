@@ -9,20 +9,27 @@
 #include <string.h>
 #include <stdint.h>
 
+
 #define Fail(msg)\
-        do {perror(msg); return 1; } while(0)
+        do {perror(msg); return 1;} while(0)
 
-int main() {
+int main(int argc, char* argv[]) {
+        int port;
 
+	if (argc==2) port = (int)atoi(argv[1]);
+        else if (argc==1)  port = 7542;
+	    else  Fail("Wrong input");
+		       
+      
 
         //Allocate socket, datagram
-        int sock = socket(AF_INET, SOCK_DGRAM, 0);
+       int sock = socket(AF_INET, SOCK_DGRAM, 0);
         if (sock == -1)
           Fail("Failed to create socket");
 
         struct sockaddr_in local_addr = {
                 .sin_family = AF_INET,
-                .sin_port = htons(7542),
+                .sin_port = htons(port),
                 .sin_addr.s_addr = htonl(INADDR_ANY)
         };
         char reply[1024];
@@ -32,9 +39,10 @@ int main() {
         socklen_t local_addr_size= sizeof(local_addr);
 
 
-        if (bind(sock, (const struct sockaddr *)&local_addr, sizeof(local_addr)))
+        if (bind(sock, (const struct sockaddr *)&local_addr, sizeof(local_addr))) 
+	{       close(sock);
                 Fail("Failed to bind"); 
-
+	}
         while(1) {       
        	char data[2048];
 
@@ -44,10 +52,11 @@ int main() {
                         break;
                                   }
        if (strcmp(inet_ntop(remote_addr.sin_family, &remote_addr.sin_addr, remote_addr_str, sizeof(remote_addr_str)),"NULL")==0)
+       {       close(sock);
                Fail("Failed while inet_ntop");
-
+        }
         printf("received packet from %s:%d, content: '%.*s'\n", remote_addr_str, ntohs(remote_addr.sin_port), (int) data_len, data);
-        snprintf(reply, sizeof(reply), " Received from %s", remote_addr_str);
+        snprintf(reply, sizeof(reply), "Received from %s", remote_addr_str);
         sendto(sock, reply, strlen(reply), 0, (const struct sockaddr *)&remote_addr, remote_addr_size);
 	}
 close(sock);
